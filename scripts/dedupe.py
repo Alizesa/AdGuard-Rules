@@ -138,10 +138,24 @@ def main():
     # --- parse anti-AD ---------------------------------------------------------
     preserved = []   # non-`||domain^` lines kept verbatim (incl. @@ allow rules)
     block_rules = []  # (domain, original_line) candidates for removal
+    src_version = None
+    src_updated = None
     for raw in read_lines(antiad_path):
         line = raw.strip()
-        if not line or line.startswith("!"):
-            continue  # anti-AD header/comments -> replaced by our own header
+        if not line:
+            continue
+        if line.startswith("!"):
+            # carry the upstream version/update time over so the output only
+            # changes when the source data actually changes (no churn commits)
+            if src_version is None:
+                m = re.match(r"^!Version:\s*(\S+)", line)
+                if m:
+                    src_version = m.group(1)
+            if src_updated is None:
+                m = re.match(r"^!Updated:\s*(\S+)", line)
+                if m:
+                    src_updated = m.group(1)
+            continue  # other header/comments replaced by our own header
         m = RE_BLOCK.match(line)
         if m:
             block_rules.append((m.group(1).lower(), raw.rstrip("\n")))
@@ -167,12 +181,14 @@ def main():
 
     # --- write output ----------------------------------------------------------
     now = datetime.datetime.now(datetime.timezone.utc)
+    version = src_version or f"{now:%Y%m%d%H%M%S}"
+    updated = src_updated or f"{now:%Y-%m-%dT%H:%M:%S+00:00}"
     total = len(preserved) + len(kept)
     lines = [
         "! Title: anti-AD (deduplicated for AdGuard)",
         "! Description: anti-AD with rules already covered by AdGuard official filters removed.",
-        f"! Version: {now:%Y%m%d%H%M%S}",
-        f"! TimeUpdated: {now:%Y-%m-%dT%H:%M:%S+00:00}",
+        f"! Version: {version}",
+        f"! TimeUpdated: {updated}",
         "! Expires: 1 day (update frequency)",
         "! Homepage: https://github.com/Alizesa/AdGuard-Rules",
         f"! Total lines: {total}",
