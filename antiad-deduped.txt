@@ -1,7 +1,7 @@
 ! Title: anti-AD (deduplicated for AdGuard)
 ! Description: anti-AD with rules already covered by AdGuard official filters removed.
-! Version: 20260812005315
-! TimeUpdated: 2026-08-12T00:53:15+00:00
+! Version: 20260812005440
+! TimeUpdated: 2026-08-12T00:54:40+00:00
 ! Expires: 1 day (update frequency)
 ! Homepage: https://github.com/Alizesa/AdGuard-Rules
 ! Total lines: 53548
