@@ -1,0 +1,53 @@
+name: Deduplicate anti-AD
+
+on:
+  schedule:
+    # daily 03:23 UTC = 11:23 Beijing. anti-AD regenerates every day.
+    - cron: '23 3 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dedupe
+  cancel-in-progress: true
+
+jobs:
+  dedupe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download filter lists
+        run: |
+          mkdir -p lists
+          curl -fsSL --retry 3 -o lists/anti-ad.txt https://anti-ad.net/adguard.txt
+          for id in 2 3 11 19 20 21 224; do
+            curl -fsSL --retry 3 -o "lists/adguard_${id}.txt" \
+              "https://filters.adtidy.org/android/filters/${id}_optimized.txt"
+          done
+          wc -l lists/*.txt
+
+      - name: Run deduplication
+        run: |
+          python scripts/dedupe.py
+          echo "--- result ---"
+          wc -l antiad-deduped.txt
+
+      - name: Commit result if changed
+        run: |
+          git add antiad-deduped.txt
+          if git diff --cached --quiet; then
+            echo "No change in the deduplicated list."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore: update deduplicated anti-AD list $(date -u +%Y-%m-%d)"
+            git push
+          fi
