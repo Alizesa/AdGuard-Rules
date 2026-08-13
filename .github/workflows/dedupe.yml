@@ -67,9 +67,9 @@ jobs:
           cd "$RUNNER_TEMP/ghpages"
           git init -q
           git remote add origin "https://github.com/Alizesa/AdGuard-Rules.git"
-          # Reuse the credentials actions/checkout configured for this repo
-          AUTH=$(git -C "$GITHUB_WORKSPACE" config --get http.extraheader || true)
-          if [ -n "$AUTH" ]; then git config http.extraheader "$AUTH"; fi
+          # Authenticate with the workflow token (available as GITHUB_TOKEN env)
+          git config --local http.https://github.com/.extraheader \
+            "AUTHORIZATION: basic $(echo -n "x-access-token:${GITHUB_TOKEN}" | base64 -w0)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch -q --depth 1 origin gh-pages 2>/dev/null || true
