@@ -4,7 +4,7 @@
 ! TimeUpdated: 2026-08-10T19:28:04+00:00
 ! Expires: 1 day (update frequency)
 ! Homepage: https://github.com/Alizesa/AdGuard-Rules
-! Total lines: 55378
+! Total lines: 55377
 
 ! Source: https://anti-ad.net/adguard.txt
 ! Deduplicated against AdGuard official filters - keep these enabled in the AdGuard app:
@@ -19425,7 +19425,6 @@
 ||genieessp.jp^
 ||genieesspv.jp^
 ||conversions.genieventures.co.uk^
-||geniuslinkcdn.com^
 ||pm.geniusmonkey.com^
 ||tc.geniusmonkey.com^
 ||pulse.genki.world^
