@@ -70,7 +70,11 @@ def load_adguard_filter(path):
     """Return (blocks, exceptions) domain sets for one AdGuard filter.
 
     blocks      domains blocked unconditionally (whole domain, no modifiers)
-    exceptions  domains allowed unconditionally (`@@||domain^`, no modifiers)
+    exceptions  domains allowed by any `@@||domain` rule (with or without
+                modifiers). A modified exception (e.g. `@@||d^$document`,
+                `$important`, `$third-party`) still means AdGuard does *not*
+                block the domain in some contexts, so it must prevent dedup
+                or we could drop a rule anti-AD relies on.
     """
     blocks = set()
     exceptions = set()
@@ -79,7 +83,7 @@ def load_adguard_filter(path):
         if not line or line.startswith(("!", "#", "$")):
             continue
         if line.startswith("@@"):
-            m = RE_ALLOW.match(line) or RE_ALLOW_BARE.match(line)
+            m = re.match(r"^@@\|\|([a-z0-9.\-]+)", line)
             if m:
                 exceptions.add(m.group(1).lower())
         elif line.startswith("||"):
@@ -130,6 +134,9 @@ def main():
         all_blocks |= blocks
         all_exceptions |= exceptions
         print(f"  [{fid:>3}] {fname:<34} blocks={len(blocks):>7} exceptions={len(exceptions):>5}")
+        if not blocks:
+            print(f"  WARNING: filter {fid} ({fname}) parsed to 0 block rules - "
+                  "download may have failed or returned an error page")
 
     use_parent = not args.no_parent
     print(f"coverage: {len(all_blocks)} domains, {len(all_exceptions)} whole-domain exceptions, "
@@ -161,6 +168,15 @@ def main():
             block_rules.append((m.group(1).lower(), raw.rstrip("\n")))
         else:
             preserved.append(raw.rstrip("\n"))
+
+    if not block_rules:
+        sys.exit("ERROR: anti-AD source has no `||domain^` rules - refusing to "
+                 "write an empty list (download failed?)")
+    if src_version is None:
+        print("WARNING: could not parse anti-AD '!Version' - fell back to run "
+              "timestamp (output is no longer byte-deterministic, expect churn commits)")
+    if src_updated is None:
+        print("WARNING: could not parse anti-AD '!Updated' - fell back to run timestamp")
 
     print(f"anti-AD: {len(block_rules)} `||domain^` blocking rules, "
           f"{len(preserved)} other lines kept verbatim")

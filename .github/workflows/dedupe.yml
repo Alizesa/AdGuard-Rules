@@ -27,9 +27,9 @@ jobs:
       - name: Download filter lists
         run: |
           mkdir -p lists
-          curl -fsSL --retry 3 -o lists/anti-ad.txt https://anti-ad.net/adguard.txt
+          curl -fsSL --retry 3 --max-time 120 -o lists/anti-ad.txt https://anti-ad.net/adguard.txt
           for id in 2 3 11 19 20 21 224; do
-            curl -fsSL --retry 3 -o "lists/adguard_${id}.txt" \
+            curl -fsSL --retry 3 --max-time 120 -o "lists/adguard_${id}.txt" \
               "https://filters.adtidy.org/android/filters/${id}_optimized.txt"
           done
           wc -l lists/*.txt
@@ -49,6 +49,8 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git commit -m "chore: update deduplicated anti-AD list $(date -u +%Y-%m-%d)"
+            # Sync with any concurrent run (rare with the concurrency guard, cheap insurance).
+            git pull --rebase --autostash origin main || true
             git push
             # jsDelivr caches @main branch URLs for up to 12h. Purge after push
             # and verify the CDN actually serves the committed content - the
