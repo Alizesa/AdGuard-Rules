@@ -8,8 +8,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
   group: dedupe
@@ -56,19 +54,36 @@ jobs:
             git push
           fi
 
-      - name: Prepare Pages artifact
+      # GitHub Pages is configured to build from the gh-pages branch, so
+      # deploying = pushing the freshly generated list to that branch.
+      # Pure git, no Node-dependent actions involved.
+      - name: Deploy to Pages (gh-pages branch)
         run: |
-          mkdir -p _site
-          cp antiad-deduped.txt _site/
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v6
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
-      - name: Deploy to Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+          set -e
+          rm -rf "$RUNNER_TEMP/ghpages"
+          mkdir -p "$RUNNER_TEMP/ghpages"
+          cp antiad-deduped.txt "$RUNNER_TEMP/ghpages/"
+          touch "$RUNNER_TEMP/ghpages/.nojekyll"
+          cd "$RUNNER_TEMP/ghpages"
+          git init -q
+          git remote add origin "https://github.com/Alizesa/AdGuard-Rules.git"
+          # Reuse the credentials actions/checkout configured for this repo
+          AUTH=$(git -C "$GITHUB_WORKSPACE" config --get http.extraheader || true)
+          if [ -n "$AUTH" ]; then git config http.extraheader "$AUTH"; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch -q --depth 1 origin gh-pages 2>/dev/null || true
+          if git rev-parse -q --verify origin/gh-pages >/dev/null 2>&1; then
+            git reset -q --soft origin/gh-pages
+            git add -A
+            if git diff --cached --quiet; then
+              echo "gh-pages unchanged, nothing to deploy"
+              exit 0
+            fi
+            git commit -q -m "deploy: update antiad-deduped.txt $(date -u +%Y-%m-%d)"
+          else
+            git add -A
+            git commit -q -m "deploy: initial antiad-deduped.txt $(date -u +%Y-%m-%d)"
+          fi
+          git push -q origin HEAD:gh-pages
+          echo "deployed to gh-pages"
