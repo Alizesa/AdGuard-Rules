@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: dedupe
@@ -52,22 +54,21 @@ jobs:
             # Sync with any concurrent run (rare with the concurrency guard, cheap insurance).
             git pull --rebase --autostash origin main || true
             git push
-            # jsDelivr caches @main branch URLs for up to 12h. Purge after push
-            # and verify the CDN actually serves the committed content - the
-            # branch->commit resolution can lag, so retry until it matches.
-            expected=$(sha256sum antiad-deduped.txt | awk '{print $1}')
-            for i in 1 2 3 4 5 6; do
-              curl -fsS --max-time 30 \
-                "https://purge.jsdelivr.net/gh/Alizesa/AdGuard-Rules@main/antiad-deduped.txt" \
-                >/dev/null || true
-              sleep 10
-              got=$(curl -fsS --max-time 60 \
-                "https://cdn.jsdelivr.net/gh/Alizesa/AdGuard-Rules@main/antiad-deduped.txt" \
-                | sha256sum | awk '{print $1}')
-              if [ "$got" = "$expected" ]; then
-                echo "jsDelivr cache synced (attempt $i)"
-                break
-              fi
-              echo "attempt $i: CDN not synced yet"
-            done
           fi
+
+      - name: Prepare Pages artifact
+        run: |
+          mkdir -p _site
+          cp antiad-deduped.txt _site/
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
