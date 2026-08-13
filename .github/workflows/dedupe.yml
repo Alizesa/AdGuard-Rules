@@ -50,4 +50,10 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git commit -m "chore: update deduplicated anti-AD list $(date -u +%Y-%m-%d)"
             git push
+            # jsDelivr caches branch URLs for up to 12h; purge right after push so
+            # CDN subscribers get the fresh list immediately.
+            echo "Purge jsDelivr cache..."
+            curl -fsS --max-time 30 \
+              "https://purge.jsdelivr.net/gh/Alizesa/AdGuard-Rules@main/antiad-deduped.txt" \
+              || echo "warning: jsDelivr purge failed (non-fatal)"
           fi
