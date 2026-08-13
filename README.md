@@ -15,13 +15,16 @@ https://cdn.jsdelivr.net/gh/Alizesa/AdGuard-Rules@main/antiad-deduped.txt
 ```
 
 > jsDelivr 对 `@main` 分支 URL 默认有最长 12 小时的缓存。本仓库的 GitHub Actions
-> 在每次推送新列表后会**自动调用 jsDelivr purge 接口刷新 CDN 缓存**，所以通常
-> 提交后几分钟内 CDN 就能拿到最新版本。如需手动刷新，可访问
+> 在每次推送新列表后会**自动调用 jsDelivr purge 接口刷新 CDN 缓存，并校验 CDN
+> 内容是否已与仓库一致（不一致会自动重试）**，所以通常提交后 1~2 分钟内 CDN 就能
+> 拿到最新版本。如需手动刷新，可访问
 > [jsDelivr Purge 工具](https://www.jsdelivr.com/tools/purge) 填入上面链接，或直接请求：
 >
 > ```
 > https://purge.jsdelivr.net/gh/Alizesa/AdGuard-Rules@main/antiad-deduped.txt
 > ```
+>
+> 如果 CDN 暂时滞后，等 1~2 分钟再访问，或临时改订阅 raw 地址。
 
 > 在 AdGuard App 里：请先**停用**原始的 `anti-ad.net/adguard.txt`（或 easylist）订阅，
 > 改为订阅上面这个生成列表，避免重复叠加。
