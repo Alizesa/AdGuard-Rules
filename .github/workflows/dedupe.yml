@@ -58,8 +58,14 @@ jobs:
       # deploying = pushing the freshly generated list to that branch.
       # Pure git, no Node-dependent actions involved.
       - name: Deploy to Pages (gh-pages branch)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -e
+          if [ -z "$GH_TOKEN" ]; then
+            echo "ERROR: GH_TOKEN is empty - cannot authenticate gh-pages push"
+            exit 1
+          fi
           rm -rf "$RUNNER_TEMP/ghpages"
           mkdir -p "$RUNNER_TEMP/ghpages"
           cp antiad-deduped.txt "$RUNNER_TEMP/ghpages/"
@@ -69,7 +75,7 @@ jobs:
           git remote add origin "https://github.com/Alizesa/AdGuard-Rules.git"
           # Authenticate with the workflow token (available as GITHUB_TOKEN env)
           git config --local http.https://github.com/.extraheader \
-            "AUTHORIZATION: basic $(echo -n "x-access-token:${GITHUB_TOKEN}" | base64 -w0)"
+            "AUTHORIZATION: basic $(echo -n "x-access-token:${GH_TOKEN}" | base64 -w0)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch -q --depth 1 origin gh-pages 2>/dev/null || true
