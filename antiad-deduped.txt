@@ -4,7 +4,7 @@
 ! TimeUpdated: 2026-08-25T19:06:37+00:00
 ! Expires: 1 day (update frequency)
 ! Homepage: https://github.com/Alizesa/AdGuard-Rules
-! Total lines: 54805
+! Total lines: 54806
 
 ! Source: https://anti-ad.net/adguard.txt
 ! Deduplicated against AdGuard official filters - keep these enabled in the AdGuard app:
@@ -19826,6 +19826,7 @@
 ||baidut.github.io^
 ||ofice365.github.io^
 ||tobecation.github.io^
+||copilot-telemetry.githubusercontent.com^
 ||copilot-telemetry-service.githubusercontent.com^
 ||gitoku.com^
 ||gitoxgmnnauiz.space^
